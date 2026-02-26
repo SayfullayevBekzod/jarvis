@@ -16,6 +16,14 @@ class AutoUpdater:
         self.current_version = config.APP_VERSION
         self.update_url = config.UPDATE_URL
         self.is_compiled = getattr(sys, 'frozen', False) # .exe ichidami?
+        self.is_git = self._check_git()
+
+    def _check_git(self):
+        """Git repozitoriyasini tekshirish"""
+        try:
+            return os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".git"))
+        except:
+            return False
 
     def check_for_updates(self):
         """Yangi versiyani tekshirish"""
@@ -67,10 +75,12 @@ class AutoUpdater:
             return None
 
     def apply_update(self, new_exe_path):
-        """Windowsda o'zini-o'zi almashtirish (Batch script orqali)"""
+        """Yangilanishni qo'llash"""
+        if self.is_git:
+            return self.apply_git_update()
+            
         if not self.is_compiled:
-            print("[Updater] Dastur .exe holatida emas, yangilab bo'lmaydi.")
-            return False
+            return "Dastur .exe holatida emas va Git repozitoriyasi topilmadi. Manuel yangilang."
 
         try:
             current_exe = sys.executable
@@ -112,6 +122,23 @@ del "%~f0"
             
         except Exception as e:
             print(f"[Updater] Apply xatosi: {e}")
+            return False
+            
+    def apply_git_update(self):
+        """Git orqali yangilash (developers uchun) triumph"""
+        try:
+            print("[Updater] Git pull bajarilmoqda...")
+            # Git pull command
+            result = subprocess.run(["git", "pull", "origin", "main"], 
+                                   capture_output=True, text=True, timeout=30)
+            if result.returncode == 0:
+                print("[Updater] Git update muvaffaqiyatli.")
+                return True
+            else:
+                print(f"[Updater] Git update xatosi: {result.stderr}")
+                return False
+        except Exception as e:
+            print(f"[Updater] Git update xatosi: {e}")
             return False
 
 # Singleton instance

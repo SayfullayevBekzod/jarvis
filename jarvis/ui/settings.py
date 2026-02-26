@@ -130,6 +130,13 @@ class SettingsWindow(ctk.CTkToplevel):
             text="Kompyuter yonganida avtomatik ishga tushish",
             variable=self.autostart_var
         ).pack(pady=5)
+
+        self.autoupdate_var = ctk.BooleanVar(value=config.AUTO_UPDATE_ENABLED)
+        ctk.CTkCheckBox(
+            scroll_frame,
+            text="Avtomatik yangilanish",
+            variable=self.autoupdate_var
+        ).pack(pady=5)
         
         # Tugmalar
         buttons_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -176,6 +183,7 @@ class SettingsWindow(ctk.CTkToplevel):
                 self.city_entry.insert(0, settings.get("default_city", "Toshkent"))
                 self.theme_var.set(settings.get("theme", "dark"))
                 self.autostart_var.set(settings.get("autostart", False))
+                self.autoupdate_var.set(settings.get("auto_update", config.AUTO_UPDATE_ENABLED))
                 self.alice_var.set(settings.get("alice_mode", False))
             else:
                 self.name_entry.insert(0, config.JARVIS_NAME)
@@ -192,6 +200,7 @@ class SettingsWindow(ctk.CTkToplevel):
             "default_city": self.city_entry.get() or "Toshkent",
             "theme": self.theme_var.get(),
             "autostart": self.autostart_var.get(),
+            "auto_update": self.autoupdate_var.get(),
             "alice_mode": self.alice_var.get()
         }
         

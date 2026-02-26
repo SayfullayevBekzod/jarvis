@@ -725,7 +725,19 @@ class JarvisApp(ctk.CTk):
         def thread_func():
             data = updater.check_for_updates()
             if data.get("update_available"):
-                self.after(0, lambda: self._show_update_dialog(data))
+                if config.AUTO_UPDATE_ENABLED:
+                    print("[App] Avtomatik yangilanish boshlandi...")
+                    self.after(0, lambda: self._update_status("Avto-yangilanmoqda...", NEON_GOLD))
+                    
+                    if updater.is_git:
+                        if updater.apply_git_update():
+                            self.after(0, lambda: self._add_chat_message("Dastur muvaffaqiyatli yangilandi (Git). Iltimos, qayta ishga tushiring.", is_user=False))
+                    else:
+                        new_exe = updater.download_update(data["download_url"])
+                        if new_exe:
+                            updater.apply_update(new_exe)
+                else:
+                    self.after(0, lambda: self._show_update_dialog(data))
         
         threading.Thread(target=thread_func, daemon=True).start()
 
@@ -733,10 +745,11 @@ class JarvisApp(ctk.CTk):
         """Yangilanish dialogini ko'rsatish"""
         new_ver = data["version"]
         changelog = data["changelog"]
+        update_type = "GIT PULL" if updater.is_git else "EXE DOWNLOAD"
         
         dialog = ctk.CTkToplevel(self)
-        dialog.title("Yangi versiya!")
-        dialog.geometry("500x350")
+        dialog.title(f"Yangi versiya! ({update_type})")
+        dialog.geometry("500x380")
         dialog.attributes("-topmost", True)
         dialog.configure(fg_color=config.BG_COLOR)
         
@@ -744,7 +757,7 @@ class JarvisApp(ctk.CTk):
         ctk.CTkLabel(dialog, text="🚀 YANGILANISH MAVJUD", font=ctk.CTkFont(size=18, weight="bold"), 
                     text_color=NEON_GOLD).pack(pady=(20, 10))
         
-        ctk.CTkLabel(dialog, text=f"Versiya: {config.APP_VERSION} → {new_ver}", 
+        ctk.CTkLabel(dialog, text=f"Versiya: {config.APP_VERSION} → {new_ver}\nTur: {update_type}", 
                     font=ctk.CTkFont(size=14, weight="bold")).pack(pady=5)
         
         # Changelog
@@ -764,6 +777,16 @@ class JarvisApp(ctk.CTk):
         btn_frame.pack(fill="x", pady=20)
         
         def start_update():
+            if updater.is_git:
+                btn_frame.pack_forget()
+                self._update_status("Git yangilanmoqda...", NEON_GOLD)
+                if updater.apply_git_update():
+                    self._add_chat_message("Git orqali yangilandi. Iltimos, dasturni o'chirib yoqing.", is_user=False)
+                    dialog.destroy()
+                else:
+                    self._update_status("Xato: Git pull ishlamadi", "#FF4444")
+                return
+
             btn_frame.pack_forget()
             pb.pack(pady=10)
             

@@ -24,6 +24,8 @@ LANGUAGE = "uz"
 APP_VERSION = "1.0.3"
 UPDATE_URL = "https://raw.githubusercontent.com/SayfullayevBekzod/jarvispro/main/version.json"
 REPO_URL = "https://github.com/SayfullayevBekzod/jarvispro"
+AUTO_UPDATE_ENABLED = False  # Avtomatik yangilanishni yoqish/o'chirish
+
 
 # Ovoz Sozlamalari
 VOICE_SPEED = 1.0
