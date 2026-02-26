@@ -3,6 +3,15 @@ import subprocess
 import sys
 import shutil
 
+# Add jarvis directory to sys.path to import config
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "jarvis"))
+try:
+    import config
+except ImportError:
+    # Fallback for localized environments
+    sys.path.insert(0, os.path.abspath("jarvis"))
+    import config
+
 def compile_jarvis():
     print("==================================================")
     print("   JARVIS - EXE KOMPILYATSIYA QILISH (BETA)   ")
