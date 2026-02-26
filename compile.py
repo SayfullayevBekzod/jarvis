@@ -63,8 +63,8 @@ def compile_jarvis():
     try:
         subprocess.check_call(cmd)
         print("\n" + "="*50)
-        print("🎉 MUVAFFAQIYATLI YAKUNLANDI!")
-        print("📦 EXE fayl 'dist/' papkasiga saqlandi (JarvisPro.exe).")
+        print(">>> MUVAFFAQIYATLI YAKUNLANDI!")
+        print("[OK] EXE fayl 'dist/' papkasiga saqlandi (JarvisPro.exe).")
         print("="*50)
         
         # 4. Cleanup (build papkasi va .spec faylni o'chirish - ixtiyoriy)
@@ -78,7 +78,7 @@ def compile_jarvis():
             print("Tozalandi.")
             
     except Exception as e:
-        print(f"\n❌ Xatolik yuz berdi: {e}")
+        print(f"\n[X] Xatolik yuz berdi: {e}")
 
 if __name__ == "__main__":
     compile_jarvis()
