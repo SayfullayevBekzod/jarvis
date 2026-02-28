@@ -16,7 +16,7 @@ import config
 from core.jarvis import jarvis
 from core.wake_word import wake_detector
 from core.updater import updater
-from ui.components import AnimatedBackground, MagneticButton
+from ui.components import AnimatedBackground, MagneticButton, HUDMessageBubble, TechDiagnosticBar
 
 # Notification ovozlari
 try:
@@ -51,116 +51,72 @@ GLASS_PANEL = "#12121f"
 GLASS_CARD = "#1a1a2e"
 
 class PulsingOrb(ctk.CTkCanvas):
-    """Ultra-premium pulsating orb animatsiyasi - Jarvis Core Style"""
-    def __init__(self, parent, size=240, **kwargs):
+    """Ultra-premium Arc Reactor style core"""
+    def __init__(self, parent, size=280, **kwargs):
         super().__init__(parent, width=size, height=size, 
                          bg=kwargs.get("bg_color", config.BG_COLOR),
                          highlightthickness=0, borderwidth=0)
         self.size = size
         self.center = size // 2
+        self.angle = 0
         self.animation_phase = 0
         self.mode = "idle"
         self.is_animating = True
         
-        # Ranglar va effektlar
         self.colors = {
-            "idle": [NEON_CYAN, "#0088AA", "#004455"],
+            "idle": ["#00F5FF", "#0088AA", "#004455"],
             "listening": ["#FF6B35", "#CC5500", "#662200"],
-            "speaking": [NEON_GOLD, "#AA8800", "#443300"],
-            "error": ["#FF4444", "#AA2222", "#551111"]
+            "speaking": ["#FFD700", "#AA8800", "#443300"],
+            "thinking": ["#AA00FF", "#6600AA", "#330066"]
         }
-        
-        self._init_particles()
         self._animate()
 
-    def _init_particles(self):
-        """Particle tizimi"""
-        self.particles = []
-        for _ in range(30):
-            self.particles.append({
-                "angle": random.uniform(0, 2 * math.pi),
-                "distance": random.uniform(40, 90),
-                "speed": random.uniform(0.02, 0.05),
-                "size": random.uniform(1, 3),
-                "opacity": random.uniform(0.3, 0.8)
-            })
-
-    def draw_active(self, phase, mode="listening"):
-        """Dinamik multi-qatlamli animatsiya"""
+    def draw_reactor(self, phase, mode="idle"):
         self.delete("all")
         colors = self.colors.get(mode, self.colors["idle"])
-        main_color = colors[0]
-        glow_color = colors[1]
+        main = colors[0]
+        dim = colors[1]
         
-        # 1. Tashqi Ambient Glow (pulsating background)
-        ambient_r = 100 + math.sin(phase) * 10
-        self.create_oval(
-            self.center - ambient_r, self.center - ambient_r,
-            self.center + ambient_r, self.center + ambient_r,
-            fill="", outline=glow_color, width=1, dash=(5, 5)
-        )
+        # 1. Outer Tech Ring (Static)
+        self.create_oval(self.center-120, self.center-120, self.center+120, self.center+120, outline="#0a1a2b", width=1)
         
-        # 2. Dinamik To'lqinlar (Dynamic Waves)
-        num_waves = 4
-        for i in range(num_waves):
-            # Har bir to'lqin alohida fazada va tezlikda
-            wave_phase = phase * (1 + i * 0.2)
-            wave_r = 60 + i * 12 + math.sin(wave_phase) * 8
-            opacity_factor = max(0.1, 0.8 - (i * 0.2))
-            
-            self.create_oval(
-                self.center - wave_r, self.center - wave_r,
-                self.center + wave_r, self.center + wave_r,
-                fill="", outline=main_color, width=2, 
-                stipple="gray50" if i > 1 else "" # CTK simulation of opacity
-            )
-            
-        # 3. Rotating Particles
-        for p in self.particles:
-            p["angle"] += p["speed"]
-            # To'lqinli harakat
-            dist = p["distance"] + math.sin(phase + p["angle"]) * 5
-            x = self.center + math.cos(p["angle"]) * dist
-            y = self.center + math.sin(p["angle"]) * dist
-            
-            p_size = p["size"] + math.sin(phase * 4) * 0.5
-            self.create_oval(
-                x - p_size, y - p_size, x + p_size, y + p_size,
-                fill=main_color, outline=""
-            )
-            
-        # 4. Markaziy Core Orb (Solid with pulse)
-        core_pulse = math.sin(phase * 3) * 5
-        core_r = 45 + core_pulse
-        
-        # Core Glow (gradient simulation with rings)
-        for i in range(3):
-            gr = core_r - i * 4
-            self.create_oval(
-                self.center - gr, self.center - gr,
-                self.center + gr, self.center + gr,
-                fill="", outline=glow_color, width=2
-            )
-            
-        # Final Solid Core
-        self.create_oval(
-            self.center - (core_r-5), self.center - (core_r-5),
-            self.center + (core_r-5), self.center + (core_r-5),
-            fill=main_color, outline="#FFFFFF", width=1
-        )
-        
-        # Inner Neon Ring (Rotating crosshair style)
-        cross_r = core_r + 10
-        angle_off = phase * 2
-        for i in range(4):
-            a = angle_off + i * (math.pi / 2)
-            x1 = self.center + math.cos(a) * (cross_r - 5)
-            y1 = self.center + math.sin(a) * (cross_r - 5)
-            x2 = self.center + math.cos(a) * (cross_r + 5)
-            y2 = self.center + math.sin(a) * (cross_r + 5)
-            self.create_line(x1, y1, x2, y2, fill=NEON_CYAN, width=2)
+        # 2. Triple Rotating Segmented Rings
+        for r_off, speed, segs, w in [(110, 1.2, 12, 3), (100, -0.8, 8, 2), (90, 1.5, 6, 4)]:
+            rot_phase = phase * speed
+            span = 360 / segs
+            for i in range(segs):
+                start = (i * span + rot_phase * 20) % 360
+                self.create_arc(self.center-r_off, self.center-r_off, self.center+r_off, self.center+r_off,
+                               start=start, extent=span*0.6, outline=dim if i % 2 == 0 else main, 
+                               width=w, style="arc")
 
-    def start_animation(self, mode="listening"):
+        # 3. Floating Data Crystals (Small rotating rects)
+        for i in range(8):
+            a = phase * 0.5 + i * (math.pi / 4)
+            d = 70 + math.sin(phase*2 + i) * 5
+            x, y = self.center + math.cos(a)*d, self.center + math.sin(a)*d
+            self.create_rectangle(x-3, y-3, x+3, y+3, fill=main, outline="")
+
+        # 4. The Core (Solid glow)
+        core_r = 45 + math.sin(phase * 4) * 3
+        # Outer Core Glow
+        for i in range(5):
+            gr = core_r + i * 4
+            self.create_oval(self.center-gr, self.center-gr, self.center+gr, self.center+gr, 
+                             outline=dim, width=1)
+        
+        # Inner Solid Core
+        self.create_oval(self.center-core_r, self.center-core_r, self.center+core_r, self.center+core_r,
+                         fill=main, outline="#FFFFFF", width=2)
+        
+        # Crosshair center
+        self.create_line(self.center-15, self.center, self.center+15, self.center, fill="#FFFFFF", width=1)
+        self.create_line(self.center, self.center-15, self.center, self.center+15, fill="#FFFFFF", width=1)
+        
+        # 5. Hexagonal Grid Overlay (Decorative)
+        # (Simulated with lines for performance)
+        
+    def start_animation(self, mode="idle"):
         self.mode = mode
         self.is_animating = True
 
@@ -170,7 +126,7 @@ class PulsingOrb(ctk.CTkCanvas):
     def _animate(self):
         if self.is_animating:
             self.animation_phase += 0.05
-            self.draw_active(self.animation_phase, self.mode)
+            self.draw_reactor(self.animation_phase, self.mode)
             self.after(30, self._animate)
 
 
@@ -203,12 +159,20 @@ class ChatMessage(ctk.CTkFrame):
             wraplength=380,
             justify="left"
         )
-        self.message.pack(anchor="w", padx=15, pady=(2, 12))
-        
-        # Vaqt
         time_str = datetime.now().strftime("%H:%M")
         self.time_lbl = ctk.CTkLabel(self, text=time_str, font=ctk.CTkFont(size=9), text_color="#555577")
         self.time_lbl.pack(side="bottom", anchor="e", padx=10, pady=(0, 5))
+        
+        # Override with HUD style
+        for widget in self.winfo_children(): widget.destroy()
+        
+        border = config.PRIMARY_COLOR if is_user else config.SECONDARY_COLOR
+        bg = "#0c1a2b" if is_user else "#1a0c2b"
+        self.configure(fg_color=bg, border_color=border, border_width=1)
+        
+        header = "USER_INPUT" if is_user else "JARVIS_RESPONSE"
+        ctk.CTkLabel(self, text=f"// {header}", font=ctk.CTkFont(size=9, weight="bold"), text_color=border).pack(anchor="w", padx=10, pady=(5,0))
+        ctk.CTkLabel(self, text=text, font=ctk.CTkFont(size=14), text_color="#FFFFFF", wraplength=350, justify="left").pack(anchor="w", padx=12, pady=(2, 10))
         
         # Animation state
         self.is_user = is_user
@@ -420,6 +384,13 @@ class JarvisApp(ctk.CTk):
         self.status_text = ctk.CTkLabel(st_container, text="ACTIVE", font=ctk.CTkFont(size=16, weight="bold"), 
                                       text_color=NEON_CYAN)
         self.status_text.pack(anchor="w")
+        
+        # HUD Diagnostic Bars
+        diag_frame = ctk.CTkFrame(self.left_panel, fg_color="transparent")
+        diag_frame.pack(fill="x", pady=5)
+        TechDiagnosticBar(diag_frame, label="CPU").pack(fill="x")
+        TechDiagnosticBar(diag_frame, label="MEM").pack(fill="x")
+        TechDiagnosticBar(diag_frame, label="NET").pack(fill="x")
         
         # Buttons (Redesigned with Magnetic effect)
         self.mic_btn = MagneticButton(self.left_panel, text="⬛ PRIMARY MIC", 

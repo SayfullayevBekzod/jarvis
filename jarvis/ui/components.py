@@ -1,14 +1,14 @@
 """
-Jarvis UI Components
-Qo'shimcha UI komponentlari
+Jarvis UI Components - HUD Pro Edition
 """
 
 import customtkinter as ctk
 import config
-
+import math
+import random
 
 class StatusIndicator(ctk.CTkFrame):
-    """Status ko'rsatkichi"""
+    """HUD Status Indicator with glow"""
     
     def __init__(self, parent, **kwargs):
         super().__init__(parent, fg_color="transparent", **kwargs)
@@ -16,134 +16,77 @@ class StatusIndicator(ctk.CTkFrame):
         self.indicator = ctk.CTkLabel(
             self,
             text="●",
-            font=ctk.CTkFont(size=12),
-            text_color="#00FF00"
+            font=ctk.CTkFont(size=14),
+            text_color=config.PRIMARY_COLOR
         )
         self.indicator.pack(side="left", padx=5)
         
         self.status_text = ctk.CTkLabel(
             self,
-            text="Tayyor",
-            font=ctk.CTkFont(size=12),
-            text_color="#AAAAAA"
+            text="SYSTEM READY",
+            font=ctk.CTkFont(size=11, weight="bold", family="Orbitron" if config.THEME == "dark" else "Arial"),
+            text_color="#88AAFF"
         )
         self.status_text.pack(side="left")
     
     def set_status(self, status: str, color: str = "#00FF00"):
-        """Statusni o'zgartirish"""
         self.indicator.configure(text_color=color)
-        self.status_text.configure(text=status)
-    
-    def set_listening(self):
-        self.set_status("Tinglayapman...", "#FF6600")
-    
-    def set_speaking(self):
-        self.set_status("Gapirmoqda...", "#00D4FF")
-    
-    def set_ready(self):
-        self.set_status("Tayyor", "#00FF00")
-    
-    def set_error(self):
-        self.set_status("Xatolik", "#FF0000")
+        self.status_text.configure(text=status.upper())
 
-
-class MessageBubble(ctk.CTkFrame):
-    """Xabar bubblelari"""
+class HUDMessageBubble(ctk.CTkFrame):
+    """Futuristic HUD Message Bubble with clipped corners and neon borders"""
     
     def __init__(self, parent, text: str, is_user: bool = True, **kwargs):
-        bg_color = "#1E3A5F" if is_user else "#2D1B4E"
-        super().__init__(parent, fg_color=bg_color, corner_radius=15, **kwargs)
+        border = config.PRIMARY_COLOR if is_user else config.SECONDARY_COLOR
+        bg = "#0c1a2b" if is_user else "#1a0c2b"
         
-        icon = "👤" if is_user else "🤖"
+        super().__init__(parent, fg_color=bg, corner_radius=12, 
+                         border_width=1, border_color=border, **kwargs)
         
-        self.label = ctk.CTkLabel(
-            self,
-            text=f"{icon} {text}",
+        self.container = ctk.CTkFrame(self, fg_color="transparent")
+        self.container.pack(padx=12, pady=8)
+        
+        header = "USER_INPUT" if is_user else "JARVIS_RESPONSE"
+        self.header_lbl = ctk.CTkLabel(
+            self.container, 
+            text=f"// {header}", 
+            font=ctk.CTkFont(size=9, weight="bold"),
+            text_color=border
+        )
+        self.header_lbl.pack(anchor="w")
+        
+        self.msg_lbl = ctk.CTkLabel(
+            self.container,
+            text=text,
             font=ctk.CTkFont(size=14),
             text_color="#FFFFFF",
             wraplength=350,
             justify="left"
         )
-        self.label.pack(padx=15, pady=10)
+        self.msg_lbl.pack(anchor="w", pady=(2, 0))
 
-
-class CommandHint(ctk.CTkFrame):
-    """Buyruq ko'rsatmalari"""
-    
-    def __init__(self, parent, **kwargs):
-        super().__init__(parent, fg_color="#1a1a2e", corner_radius=10, **kwargs)
-        
-        self.hints = [
-            "💬 \"Salom Jarvis\"",
-            "🕐 \"Soat necha?\"",
-            "🌐 \"Chrome ochib ber\"",
-            "🔢 \"5 plyus 5 necha?\"",
-            "🔍 \"Google'da ... qidir\"",
-            "📸 \"Skrinshot ol\"",
-        ]
-        
-        title = ctk.CTkLabel(
-            self,
-            text="Buyruq namunalari:",
-            font=ctk.CTkFont(size=12, weight="bold"),
-            text_color="#888888"
-        )
-        title.pack(pady=(10, 5))
-        
-        hints_text = " • ".join(self.hints)
-        label = ctk.CTkLabel(
-            self,
-            text=hints_text,
-            font=ctk.CTkFont(size=11),
-            text_color="#666666",
-            wraplength=500
-        )
-        label.pack(padx=10, pady=(0, 10))
-
-
-class VolumeSlider(ctk.CTkFrame):
-    """Ovoz balandligi slayderi"""
-    
-    def __init__(self, parent, **kwargs):
+class TechDiagnosticBar(ctk.CTkFrame):
+    """Decorative HUD diagnostic bar"""
+    def __init__(self, parent, label="CPU_LOAD", **kwargs):
         super().__init__(parent, fg_color="transparent", **kwargs)
         
-        label = ctk.CTkLabel(
-            self,
-            text="🔊",
-            font=ctk.CTkFont(size=16)
-        )
-        label.pack(side="left", padx=5)
+        ctk.CTkLabel(self, text=label, font=ctk.CTkFont(size=9), text_color="#445566").pack(side="left", padx=5)
         
-        self.slider = ctk.CTkSlider(
-            self,
-            from_=0,
-            to=100,
-            width=100,
-            height=16,
-            fg_color="#333333",
-            progress_color=config.PRIMARY_COLOR
-        )
-        self.slider.set(80)
-        self.slider.pack(side="left", padx=5)
+        self.bar = ctk.CTkProgressBar(self, width=100, height=4, fg_color="#1a1a1a", progress_color=config.PRIMARY_COLOR)
+        self.bar.pack(side="left", padx=5)
+        self.bar.set(0.4 + random.random() * 0.4)
+        
+        self._animate()
 
-
-class SettingsButton(ctk.CTkButton):
-    """Sozlamalar tugmasi"""
-    
-    def __init__(self, parent, command=None, **kwargs):
-        super().__init__(
-            parent,
-            text="⚙️",
-            width=40,
-            height=40,
-            corner_radius=20,
-            fg_color="#333333",
-            **kwargs
-        )
-
+    def _animate(self):
+        val = self.bar.get()
+        new_val = val + (random.random() - 0.5) * 0.1
+        new_val = max(0.2, min(0.9, new_val))
+        self.bar.set(new_val)
+        self.after(1000, self._animate)
 
 class AnimatedBackground(ctk.CTkCanvas):
-    """Moving particles background effect"""
+    """Futuristic HUD Background with Grid and Scanning Lines"""
     
     def __init__(self, parent, **kwargs):
         super().__init__(
@@ -154,9 +97,11 @@ class AnimatedBackground(ctk.CTkCanvas):
             **kwargs
         )
         self.particles = []
-        self.num_particles = 40
+        self.scan_line_y = 0
+        self.grid_offset = 0
         self.animate = True
-        
+        self.width = 1
+        self.height = 1
         self.bind("<Configure>", self._on_resize)
 
     def _on_resize(self, event):
@@ -165,17 +110,16 @@ class AnimatedBackground(ctk.CTkCanvas):
         self._init_particles()
 
     def _init_particles(self):
-        import random
         self.particles = []
-        for _ in range(self.num_particles):
+        for _ in range(30):
             self.particles.append({
                 "x": random.randint(0, self.width),
                 "y": random.randint(0, self.height),
-                "vx": random.uniform(-0.5, 0.5),
-                "vy": random.uniform(-0.5, 0.5),
-                "r": random.uniform(1, 3),
-                "color": random.choice([config.PRIMARY_COLOR, config.SECONDARY_COLOR, "#FFFFFF"]),
-                "alpha": random.uniform(0.1, 0.4)
+                "vx": random.uniform(-0.3, 0.3),
+                "vy": random.uniform(-0.3, 0.3),
+                "r": random.uniform(1, 2),
+                "color": random.choice([config.PRIMARY_COLOR, "#FFFFFF"]),
+                "alpha": random.uniform(0.1, 0.3)
             })
 
     def start(self):
@@ -185,84 +129,49 @@ class AnimatedBackground(ctk.CTkCanvas):
         self.animate = False
 
     def _draw(self):
-        if not self.animate:
-            return
-            
+        if not self.animate: return
         self.delete("all")
+        
+        # 1. Digital Grid
+        grid_size = 50
+        self.grid_offset = (self.grid_offset + 0.5) % grid_size
+        for x in range(int(-grid_size + self.grid_offset), self.width + grid_size, grid_size):
+            self.create_line(x, 0, x, self.height, fill="#0a1525", width=1)
+        for y in range(int(-grid_size + self.grid_offset), self.height + grid_size, grid_size):
+            self.create_line(0, y, self.width, y, fill="#0a1525", width=1)
+
+        # 2. Scanning Line
+        self.scan_line_y = (self.scan_line_y + 2) % self.height
+        self.create_line(0, self.scan_line_y, self.width, self.scan_line_y, fill="#1a3a5a", width=1)
+        # Subtle glow for scan line
+        for i in range(5):
+            opacity = 5 - i
+            self.create_line(0, self.scan_line_y - i, self.width, self.scan_line_y - i, fill="#081828", width=1)
+
+        # 3. Particles & Connections
         for p in self.particles:
-            p["x"] += p["vx"]
-            p["y"] += p["vy"]
+            p["x"] = (p["x"] + p["vx"]) % self.width
+            p["y"] = (p["y"] + p["vy"]) % self.height
+            self.create_oval(p["x"]-p["r"], p["y"]-p["r"], p["x"]+p["r"], p["y"]+p["r"], fill="#1a3a5a", outline="")
             
-            # Wrap around
-            if p["x"] < 0: p["x"] = self.width
-            if p["x"] > self.width: p["x"] = 0
-            if p["y"] < 0: p["y"] = self.height
-            if p["y"] > self.height: p["y"] = 0
-            
-            # Draw particle
-            self.create_oval(
-                p["x"] - p["r"], p["y"] - p["r"],
-                p["x"] + p["r"], p["y"] + p["r"],
-                fill=p["color"],
-                outline=""
-            )
-            
-            # Draw lines between close particles
-            for p2 in self.particles:
-                dist = ((p["x"] - p2["x"])**2 + (p["y"] - p2["y"])**2)**0.5
-                if dist < 100:
-                    opacity = 1 - (dist / 100)
-                    self.create_line(
-                        p["x"], p["y"], p2["x"], p2["y"],
-                        fill=p["color"],
-                        width=1,
-                        stipple="gray25" # Basic transparency simulation
-                    )
-                    
+        # 4. Corner HUD Brackets
+        margin = 20
+        size = 40
+        # TL
+        self.create_line(margin, margin, margin+size, margin, fill=config.PRIMARY_COLOR, width=2)
+        self.create_line(margin, margin, margin, margin+size, fill=config.PRIMARY_COLOR, width=2)
+        # TR
+        self.create_line(self.width-margin, margin, self.width-margin-size, margin, fill=config.PRIMARY_COLOR, width=2)
+        self.create_line(self.width-margin, margin, self.width-margin, margin+size, fill=config.PRIMARY_COLOR, width=2)
+        # BL
+        self.create_line(margin, self.height-margin, margin+size, self.height-margin, fill=config.PRIMARY_COLOR, width=2)
+        self.create_line(margin, self.height-margin, margin, self.height-margin-size, fill=config.PRIMARY_COLOR, width=2)
+        # BR
+        self.create_line(self.width-margin, self.height-margin, self.width-margin-size, self.height-margin, fill=config.PRIMARY_COLOR, width=2)
+        self.create_line(self.width-margin, self.height-margin, self.width-margin, self.height-margin-size, fill=config.PRIMARY_COLOR, width=2)
+
         self.after(50, self._draw)
 
-
 class MagneticButton(ctk.CTkButton):
-    """Button that pulls towards the mouse cursor"""
-    
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
-        self.original_pos = None
-        self.bind("<Enter>", self._on_enter)
-        self.bind("<Leave>", self._on_leave)
-        self.bind("<Motion>", self._on_motion)
-        
-        self.magnetic_pull = 15 # Max pixels to pull
-        self.lerp_factor = 0.2
-
-    def _on_enter(self, event):
-        # Scale effect or color change handled by CTk
-        pass
-
-    def _on_leave(self, event):
-        self._reset_pos()
-
-    def _on_motion(self, event):
-        # Calculate distance from center
-        bw = self.winfo_width()
-        bh = self.winfo_height()
-        cx, cy = bw/2, bh/2
-        
-        mx, my = event.x, event.y
-        
-        dx = (mx - cx) / cx
-        dy = (my - cy) / cy
-        
-        # Apply pull
-        tx = dx * self.magnetic_pull
-        ty = dy * self.magnetic_pull
-        
-        # Simple movement (usually needs place() to work well)
-        # For simplicity in grid/pack, we'll use configuration of offset if supported
-        # But in Tkinter, it's easier to use relative positioning if already placed
-        # Instead, let's just use it for a visual "wiggle" of the text/content
-        # Or just use the glow effect which is easier in CTk
-        pass
-
-    def _reset_pos(self):
-        pass
