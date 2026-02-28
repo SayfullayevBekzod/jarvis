@@ -21,7 +21,10 @@ class AutoUpdater:
     def _check_git(self):
         """Git repozitoriyasini tekshirish"""
         try:
-            return os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".git"))
+            # updater.py jarvis/core ichida joylashgan
+            # .git esa loyiha ildizida joylashgan (../../.git)
+            root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            return os.path.exists(os.path.join(root_dir, ".git"))
         except:
             return False
 
