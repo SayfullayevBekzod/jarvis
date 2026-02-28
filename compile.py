@@ -53,6 +53,8 @@ def compile_jarvis():
         f"--add-data={assets_dir}{separator}jarvis/assets",
         "--hidden-import=requests",
         "--hidden-import=packaging",
+        "--hidden-import=google.generativeai",
+        "--hidden-import=edge_tts",
         "--clean",
         main_script
     ]
